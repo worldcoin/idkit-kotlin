@@ -16,14 +16,26 @@ data class Proof(
     @SerialName("credential_type") val credentialType: CredentialType
 ) {
     enum class CredentialType {
-        @SerialName("orb") ORB,
-        @SerialName("device") DEVICE
+        @SerialName("orb")
+        ORB,
+        @SerialName("secure_document")
+        SECURE_DOCUMENT,
+        @SerialName("document")
+        DOCUMENT,
+        @SerialName("device")
+        DEVICE
     }
 }
 
 enum class VerificationLevel {
-    @SerialName("orb") ORB,
-    @SerialName("device") DEVICE
+    @SerialName("orb")
+    ORB,
+    @SerialName("secure_document")
+    SECURE_DOCUMENT,
+    @SerialName("document")
+    DOCUMENT,
+    @SerialName("device")
+    DEVICE
 }
 
 @Serializable
@@ -46,11 +58,13 @@ sealed class AppError(override val message: String) : Throwable(message) {
 
     @Serializable
     @SerialName("malformed_request")
-    object MalformedRequest : AppError("There was a problem with this request. Please try again or contact the app owner.")
+    object MalformedRequest :
+        AppError("There was a problem with this request. Please try again or contact the app owner.")
 
     @Serializable
     @SerialName("invalid_network")
-    object InvalidNetwork : AppError("Invalid network. If you are the app owner, visit docs.worldcoin.org/test for details.")
+    object InvalidNetwork :
+        AppError("Invalid network. If you are the app owner, visit docs.worldcoin.org/test for details.")
 
     @Serializable
     @SerialName("inclusion_proof_failed")
@@ -58,7 +72,8 @@ sealed class AppError(override val message: String) : Throwable(message) {
 
     @Serializable
     @SerialName("inclusion_proof_pending")
-    object InclusionProofPending : AppError("The user's identity is still being registered. Please wait a few minutes and try again.")
+    object InclusionProofPending :
+        AppError("The user's identity is still being registered. Please wait a few minutes and try again.")
 
     @Serializable
     @SerialName("unexpected_response")
@@ -72,7 +87,6 @@ sealed class AppError(override val message: String) : Throwable(message) {
     @SerialName("generic_error")
     object GenericError : AppError("Something unexpected went wrong. Please try again.")
 }
-
 
 
 @Serializable
@@ -98,6 +112,10 @@ data class CreateRequestPayload(
         verificationLevel = verificationLevel,
         credentialTypes = if (verificationLevel == VerificationLevel.ORB)
             listOf(Proof.CredentialType.ORB)
+        else if (verificationLevel == VerificationLevel.SECURE_DOCUMENT)
+            listOf(Proof.CredentialType.ORB, Proof.CredentialType.SECURE_DOCUMENT)
+        else if (verificationLevel == VerificationLevel.DOCUMENT)
+            listOf(Proof.CredentialType.ORB, Proof.CredentialType.SECURE_DOCUMENT, Proof.CredentialType.DOCUMENT)
         else
             listOf(Proof.CredentialType.ORB, Proof.CredentialType.DEVICE)
     )
