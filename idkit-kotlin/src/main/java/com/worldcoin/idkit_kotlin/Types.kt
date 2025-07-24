@@ -13,7 +13,8 @@ data class Proof(
     val proof: String,
     @SerialName("merkle_root") val merkleRoot: String,
     @SerialName("nullifier_hash") val nullifierHash: String,
-    @SerialName("credential_type") val credentialType: CredentialType
+    @SerialName("credential_type") val credentialType: CredentialType,
+    @SerialName("verification_level") val verificationLevel: CredentialType,
 ) {
     enum class CredentialType {
         @SerialName("orb")
