@@ -1,5 +1,6 @@
 package com.worldcoin.idkit_kotlin
 
+import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -154,7 +155,7 @@ class Session(
 
                 val bridgeResponse = Json.decodeFromString<BridgeQueryResponse>(responseStream)
                 if (bridgeResponse.status == "completed") {
-                    val payload = bridgeResponse.response ?: throw AppError.UnexpectedResponse
+                    val payload = bridgeResponse.response ?: throw AppErrorThrowable(AppError.UnexpectedResponse)
                     when (val decryptedResponse = payload.decrypt(key)) {
                         is BridgeResponse.Error -> {
                             emit(Status.Failed(decryptedResponse.error))
@@ -172,7 +173,7 @@ class Session(
                 val status = when (bridgeResponse.status) {
                     "retrieved" -> Status.AwaitingConfirmation
                     "initialized" -> Status.WaitingForConnection
-                    else -> throw AppError.UnexpectedResponse
+                    else -> throw AppErrorThrowable(AppError.UnexpectedResponse)
                 }
 
                 if (status != currentStatus) {
@@ -181,13 +182,13 @@ class Session(
                 }
 
                 delay(3000)  // Wait for 3 seconds before polling again
-            } catch (e: Exception) {
+            } catch (ex: Exception) {
+                Log.w("IdKit-Kotlin", "Something went wrong: $ex")
                 emit(Status.Failed(AppError.GenericError))
                 break
             }
         }
     }.flowOn(Dispatchers.IO)
-
 }
 
 fun encodeSignal(signal: String): String {

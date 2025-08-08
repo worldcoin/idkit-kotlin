@@ -9,13 +9,9 @@ import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
 @Serializable
-data class Proof(
-    val proof: String,
-    @SerialName("merkle_root") val merkleRoot: String,
-    @SerialName("nullifier_hash") val nullifierHash: String,
-    @SerialName("credential_type") val credentialType: CredentialType,
-    @SerialName("verification_level") val verificationLevel: CredentialType,
-) {
+sealed interface Proof {
+
+    @Serializable
     enum class CredentialType {
         @SerialName("orb")
         ORB,
@@ -26,6 +22,24 @@ data class Proof(
         @SerialName("device")
         DEVICE
     }
+
+    @Serializable
+    data class Default(
+        val proof: String,
+        @SerialName("merkle_root") val merkleRoot: String,
+        @SerialName("nullifier_hash") val nullifierHash: String,
+        @SerialName("credential_type") val credentialType: CredentialType,
+        @SerialName("verification_level") val verificationLevel: CredentialType,
+    ) : Proof
+
+    @Serializable
+    data class CredentialCategory(
+        @SerialName("proof") val proof: String,
+        @SerialName("merkle_root") val merkleRoot: String,
+        @SerialName("nullifier_hash") val nullifierHash: String,
+        @SerialName("verification_credential_result")
+        val verificationCredentialResult:  Map<String, String>,
+    ) : Proof
 }
 
 enum class VerificationLevel {
@@ -39,55 +53,88 @@ enum class VerificationLevel {
     DEVICE
 }
 
-@Serializable
-sealed class AppError(override val message: String) : Throwable(message) {
+@Serializable(with = AppErrorSerializer::class)
+sealed interface AppError {
+    val message: String
+
     @Serializable
     @SerialName("connection_failed")
-    object ConnectionFailed : AppError("Failed to connect to the World App. Please create a new session and try again.")
+    object ConnectionFailed : AppError {
+        override val message =
+            "Failed to connect to the World App. Please create a new session and try again."
+    }
 
     @Serializable
     @SerialName("verification_rejected")
-    object VerificationRejected : AppError("The user rejected the verification request in the World App.")
+    object VerificationRejected : AppError {
+        override val message =
+            "The user rejected the verification request in the World App."
+    }
 
     @Serializable
     @SerialName("max_verifications_reached")
-    object MaxVerificationsReached : AppError("The user already verified the maximum number of times for this action.")
+    object MaxVerificationsReached : AppError {
+        override val message =
+            "The user already verified the maximum number of times for this action."
+    }
 
     @Serializable
     @SerialName("credential_unavailable")
-    object CredentialUnavailable : AppError("The user does not have the verification level required by this app.")
+    object CredentialUnavailable : AppError {
+        override val message =
+            "The user does not have the verification level required by this app."
+    }
 
     @Serializable
     @SerialName("malformed_request")
-    object MalformedRequest :
-        AppError("There was a problem with this request. Please try again or contact the app owner.")
+    object MalformedRequest : AppError {
+        override val message =
+            "There was a problem with this request. Please try again or contact the app owner."
+    }
 
     @Serializable
     @SerialName("invalid_network")
-    object InvalidNetwork :
-        AppError("Invalid network. If you are the app owner, visit docs.worldcoin.org/test for details.")
+    object InvalidNetwork : AppError {
+        override val message =
+            "Invalid network. If you are the app owner, visit docs.worldcoin.org/test for details."
+    }
 
     @Serializable
     @SerialName("inclusion_proof_failed")
-    object InclusionProofFailed : AppError("There was an issue fetching the user's credential. Please try again.")
+    object InclusionProofFailed : AppError {
+        override val message =
+            "There was an issue fetching the user's credential. Please try again."
+    }
 
     @Serializable
     @SerialName("inclusion_proof_pending")
-    object InclusionProofPending :
-        AppError("The user's identity is still being registered. Please wait a few minutes and try again.")
+    object InclusionProofPending : AppError {
+        override val message =
+            "The user's identity is still being registered. Please wait a few minutes and try again."
+    }
 
     @Serializable
     @SerialName("unexpected_response")
-    object UnexpectedResponse : AppError("Unexpected response from the user's World App. Please try again.")
+    object UnexpectedResponse : AppError {
+        override val message =
+            "Unexpected response from the user's World App. Please try again."
+    }
 
     @Serializable
     @SerialName("failed_by_host_app")
-    object FailedByHostApp : AppError("Verification failed by the app. Please contact the app owner for details.")
+    object FailedByHostApp : AppError {
+        override val message =
+            "Verification failed by the app. Please contact the app owner for details."
+    }
 
     @Serializable
     @SerialName("generic_error")
-    object GenericError : AppError("Something unexpected went wrong. Please try again.")
+    object GenericError : AppError {
+        override val message = "Something unexpected went wrong. Please try again."
+    }
 }
+
+internal class AppErrorThrowable(appError: AppError) : Throwable(appError.message)
 
 @Serializable
 sealed interface EncryptablePayload
