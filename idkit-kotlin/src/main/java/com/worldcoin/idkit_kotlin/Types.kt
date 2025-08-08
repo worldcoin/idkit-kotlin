@@ -1,5 +1,6 @@
 package com.worldcoin.idkit_kotlin
 
+import android.annotation.SuppressLint
 import kotlinx.serialization.*
 import kotlinx.serialization.json.Json
 import java.net.URL
@@ -23,6 +24,7 @@ sealed interface Proof {
         DEVICE
     }
 
+    @SuppressLint("UnsafeOptInUsageError")
     @Serializable
     data class Default(
         val proof: String,
@@ -32,6 +34,7 @@ sealed interface Proof {
         @SerialName("verification_level") val verificationLevel: CredentialType,
     ) : Proof
 
+    @SuppressLint("UnsafeOptInUsageError")
     @Serializable
     data class CredentialCategory(
         @SerialName("proof") val proof: String,
@@ -134,11 +137,14 @@ sealed interface AppError {
     }
 }
 
+data class GenericAppError(override val message: String) : AppError
+
 internal class AppErrorThrowable(appError: AppError) : Throwable(appError.message)
 
 @Serializable
 sealed interface EncryptablePayload
 
+@SuppressLint("UnsafeOptInUsageError")
 @Serializable
 data class CreateRequestPayload(
     @SerialName("app_id") val appId: String,
@@ -178,6 +184,7 @@ data class CreateRequestPayload(
     )
 }
 
+@SuppressLint("UnsafeOptInUsageError")
 @Serializable
 data class CreateCredentialCategoryRequestPayload(
     @SerialName("app_id") val appId: String,

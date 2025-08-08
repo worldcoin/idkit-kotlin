@@ -57,7 +57,7 @@ internal object AppErrorSerializer : KSerializer<AppError> {
         PrimitiveSerialDescriptor("AppError", PrimitiveKind.STRING)
 
     override fun serialize(encoder: Encoder, value: AppError) {
-        throw NotImplementedError("Serialization of AppError is not supported")
+       encoder.encodeString(value.message)
     }
 
     override fun deserialize(decoder: Decoder): AppError {
@@ -81,7 +81,7 @@ internal object AppErrorSerializer : KSerializer<AppError> {
             "generic_error" -> AppError.GenericError
             else -> {
                 Log.w("IdKit-Kotlin", "Unknown error: $errorString")
-                AppError.GenericError
+                GenericAppError(errorString)
             }
         }
     }
