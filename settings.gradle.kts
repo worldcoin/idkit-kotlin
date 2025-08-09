@@ -20,5 +20,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "IDKitDev"
-include(":app")
 include(":idkit-kotlin")

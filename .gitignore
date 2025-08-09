@@ -3,3 +3,5 @@
 .gradle
 .idea
 local.properties
+.kotlin/errors
+app/build
