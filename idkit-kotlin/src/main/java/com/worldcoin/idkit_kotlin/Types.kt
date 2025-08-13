@@ -213,12 +213,12 @@ enum class CredentialCategory {
     /**
      * The set of NFC credentials with no authentication.
      */
-    DOCUMENT,
+    @SerialName("document") DOCUMENT,
 
     /**
      * The set of NFC credentials with active or passive authentication.
      */
-    SECURE_DOCUMENT
+    @SerialName("secure_document") SECURE_DOCUMENT,
 }
 
 @Serializable
