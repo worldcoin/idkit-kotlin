@@ -27,6 +27,24 @@ android {
     }
 }
 
+publishing {
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/worldcoin/idkit-kotlin")
+            credentials {
+                username = project.findProperty("gpr.user") as String? ?: "seanrolszewski"
+                password = project.findProperty("gpr.key") as String? ?: ""
+            }
+        }
+    }
+    publications {
+        register<MavenPublication>("gpr") {
+            artifact("build/outputs/aar/idkit-kotlin-release.aar")
+        }
+    }
+}
+
 dependencies {
     implementation(libs.material)
     implementation(libs.kotlinx.serialization.json)
