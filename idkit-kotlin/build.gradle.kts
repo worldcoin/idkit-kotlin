@@ -46,8 +46,8 @@ afterEvaluate {
             create<MavenPublication>("release") {
                 groupId = "com.worldcoin"
                 artifactId = "idkit-kotlin"
-                version = "1.0.2"
-
+                // Update this version when publishing
+                version = "2.0.1"
                 from(components["release"])
             }
         }

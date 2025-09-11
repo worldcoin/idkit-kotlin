@@ -69,4 +69,16 @@ All the technical docs for the Wordcoin SDK, World ID Protocol, examples, guides
   </p>
 </a>
 
+## Release
+
+1. Before you release please make sure that you have updated the version in `idkit-kotlin/build.gradle.kts`.
+
+2. To complete the release please perform the following:
+
+````shell
+./gradlew clean
+./gradlew :idkit-kotlin:build
+./gradlew :idkit-kotlin:publishReleasePublicationToGitHubPackagesRepository
+````
+
 <!-- WORLD-ID-SHARED-README-TAG:END -->
