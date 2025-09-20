@@ -38,12 +38,14 @@ sealed interface Proof {
     @Serializable
     data class CredentialCategory(
         @SerialName("response")
-        val response: Response,
+        val response: List<Response>,
         @SerialName("query")
         val credentialCategory: List<com.worldcoin.idkit_kotlin.CredentialCategory>,
     ) : Proof {
         @Serializable
         data class Response(
+            @SerialName("action")
+            val action: String,
             @SerialName("proof")
             val proof: String,
             @SerialName("merkle_root")
@@ -201,20 +203,20 @@ data class CreateCredentialCategoryRequestPayload(
     @SerialName("action") val action: String,
     @SerialName("signal") val signal: String,
     @SerialName("action_description") val actionDescription: String?,
-    @SerialName("credential_category") val credentialCategory: Set<CredentialCategory>
+    @SerialName("credential_category") val credentialCategory: Set<CredentialCategory>,
 ) : EncryptablePayload {
     constructor(
         appID: AppID,
         action: String,
         signal: String,
         actionDescription: String?,
-        credentialCategory: Set<CredentialCategory>
+        credentialCategory: Set<CredentialCategory>,
     ) : this(
         appId = appID.rawId,
         action = action,
         signal = signal,
         actionDescription = actionDescription,
-        credentialCategory = credentialCategory
+        credentialCategory = credentialCategory,
     )
 }
 
@@ -229,6 +231,12 @@ enum class CredentialCategory {
      * The set of NFC credentials with active or passive authentication.
      */
     @SerialName("secure_document") SECURE_DOCUMENT,
+
+    /**
+    * The set of credentials that proof personhood (I.E Iris Code)
+    */
+    @SerialName("personhood")
+    PERSONHOOD,
 }
 
 @Serializable
