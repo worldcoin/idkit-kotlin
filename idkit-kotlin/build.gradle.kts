@@ -47,7 +47,7 @@ afterEvaluate {
                 groupId = "com.worldcoin"
                 artifactId = "idkit-kotlin"
                 // Update this version when publishing
-                version = "2.0.1"
+                version = "3.0.0"
                 from(components["release"])
             }
         }

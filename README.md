@@ -44,6 +44,38 @@ class IDKitTest {
 }
 ```
 
+## Installation
+
+### GitHub Packages (recommended)
+
+This library is published to GitHub Packages. GitHub requires authentication to download packages, even for public repositories. Configure a Personal Access Token (classic) with the `read:packages` scope and your GitHub username in your Gradle configuration.
+
+Add the repository and credentials in your project's `settings.gradle` or root `build.gradle`:
+
+```kotlin
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+        maven {
+            url = uri("https://maven.pkg.github.com/worldcoin/idkit-kotlin")
+            credentials {
+                username = System.getenv("GITHUB_USER")
+                password = System.getenv("GITHUB_TOKEN") // PAT with read:packages
+            }
+        }
+    }
+}
+```
+
+Then add the dependency:
+
+```kotlin
+implementation("com.worldcoin:idkit-kotlin:3.0.0")
+```
+
+If you cannot use GitHub Packages, please open an issue. We plan to make a Maven Central distribution available.
+
 <!-- WORLD-ID-SHARED-README-TAG:START - Do not remove or modify this section directly -->
 <!-- The contents of this file are inserted to all World ID repositories to provide general context on World ID. -->
 
@@ -75,10 +107,10 @@ All the technical docs for the Wordcoin SDK, World ID Protocol, examples, guides
 
 2. To complete the release please perform the following:
 
-````shell
+```shell
 ./gradlew clean
 ./gradlew :idkit-kotlin:build
 ./gradlew :idkit-kotlin:publishReleasePublicationToGitHubPackagesRepository
-````
+```
 
 <!-- WORLD-ID-SHARED-README-TAG:END -->
