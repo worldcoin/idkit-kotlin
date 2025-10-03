@@ -2,8 +2,12 @@ plugins {
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.jetbrainsKotlinAndroid)
     kotlin("plugin.serialization") version "2.0.0"
-    `maven-publish`
+    alias(libs.plugins.mavenPublish)
 }
+
+val libraryGroup = "com.worldcoin"
+val libraryArtifactId = "idkit-kotlin"
+val libraryVersion = "4.0.0-SNAPSHOT"
 
 android {
     namespace = "com.worldcoin.idkit_kotlin"
@@ -25,13 +29,6 @@ android {
     kotlinOptions {
         jvmTarget = "1.8"
     }
-
-    publishing {
-        singleVariant("release") {
-            withSourcesJar()
-            withJavadocJar()
-        }
-    }
 }
 
 dependencies {
@@ -40,17 +37,40 @@ dependencies {
     implementation(libs.kotlincrypto.sha3)
 }
 
-afterEvaluate {
-    publishing {
-        publications {
-            create<MavenPublication>("release") {
-                groupId = "com.worldcoin"
-                artifactId = "idkit-kotlin"
-                // Update this version when publishing
-                version = "3.0.0"
-                from(components["release"])
+mavenPublishing {
+    publishToMavenCentral()
+    signAllPublications()
+    coordinates(libraryGroup, libraryArtifactId, libraryVersion)
+
+    pom {
+        name.set("IDKit (Kotlin)")
+        description.set("The IDKit library provides a simple Kotlin interface for prompting users for World ID proofs.")
+        inceptionYear.set("2024")
+        url.set("https://github.com/worldcoin/idkit-kotlin/")
+        licenses {
+            license {
+                name.set("MIT License")
+                url.set("https://mit-license.org/")
+                distribution.set("https://mit-license.org/")
             }
         }
+        developers {
+            developer {
+                id.set("worldcoin")
+                name.set("Worldcoin")
+                url.set("https://github.com/worldcoin/")
+            }
+        }
+        scm {
+            url.set("https://github.com/worldcoin/idkit-kotlin/")
+            connection.set("scm:git:git://github.com/worldcoin/idkit-kotlin.git")
+            developerConnection.set("scm:git:ssh://git@github.com/worldcoin/idkit-kotlin.git")
+        }
+    }
+}
+
+afterEvaluate {
+    publishing {
         repositories {
             maven {
                 name = "GitHubPackages"
