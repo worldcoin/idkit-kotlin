@@ -72,8 +72,6 @@ Then add the dependency:
 implementation("com.worldcoin:idkit-kotlin:3.0.0")
 ```
 
-If you cannot use GitHub Packages, please open an issue. We plan to make a Maven Central distribution available.
-
 <!-- WORLD-ID-SHARED-README-TAG:START - Do not remove or modify this section directly -->
 <!-- The contents of this file are inserted to all World ID repositories to provide general context on World ID. -->
 
@@ -101,14 +99,47 @@ All the technical docs for the Wordcoin SDK, World ID Protocol, examples, guides
 
 ## Release
 
-1. Before you release please make sure that you have updated the version in `idkit-kotlin/build.gradle.kts`.
+When publishing, you need to provide your Sonatype OSS credentials and signing GPG key, put them in your user’s home `gradle.properties` (`~/.gradle/gradle.properties`):
+
+```
+mavenCentralUsername=username
+mavenCentralPassword=the_password
+
+signing.keyId=12345678
+signing.password=some_password
+signing.secretKeyRingFile=/Users/yourusername/.gnupg/secring.gpg
+```
+
+1. Before you release please make sure that you have removed the `-SNAPSHOT` from the `libraryVersion` (`idkit-kotlin/build.gradle.kts`).
 
 2. To complete the release please perform the following:
 
 ```shell
 ./gradlew clean
 ./gradlew :idkit-kotlin:build
-./gradlew :idkit-kotlin:publishReleasePublicationToGitHubPackagesRepository
+./gradlew :idkit-kotlin:publish
+```
+
+3. Bump the major `libraryVersion` and bring the `-SNAPSHOT` back.
+
+## Publishing Commands
+
+### To Maven Central
+
+```shell
+./gradlew publishToMavenCentral
+```
+
+### To GitHub Packages
+
+```shell
+./gradlew publishAllPublicationsToGitHubPackagesRepository
+```
+
+### To both
+
+```shell
+./gradlew publish
 ```
 
 <!-- WORLD-ID-SHARED-README-TAG:END -->

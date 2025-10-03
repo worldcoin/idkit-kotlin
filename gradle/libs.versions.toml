@@ -4,6 +4,7 @@ kotlin = "2.0.0"
 kotlinxSerializationJson = "1.7.1"
 material = "1.12.0"
 kotlincrypto="0.5.1"
+mavenPublish = "0.34.0"
 
 [libraries]
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
@@ -14,4 +15,5 @@ kotlincrypto-sha3 = { module = "org.kotlincrypto.hash:sha3", version.ref = "kotl
 androidApplication = { id = "com.android.application", version.ref = "agp" }
 jetbrainsKotlinAndroid = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 androidLibrary = { id = "com.android.library", version.ref = "agp" }
+mavenPublish = { id = "com.vanniktech.maven.publish", version.ref = "mavenPublish" }
 
