@@ -42,6 +42,12 @@ session.status().collect { status ->
 }
 ```
 
+### Network Behavior
+
+The SDK automatically retries on temporary network errors (connection issues, server errors). This ensures seamless recovery when the app returns from background, especially on Android 15+ where background network access is restricted.
+
+The session will emit `Status.Failed` if no successful response is received within 15 minutes (matching the Bridge session lifetime).
+
 ## Installation
 
 ### GitHub Packages (recommended)

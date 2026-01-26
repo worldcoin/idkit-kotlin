@@ -14,6 +14,7 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.json.Json
 import org.kotlincrypto.hash.sha3.Keccak256
+import java.io.IOException
 import java.math.BigInteger
 import java.net.HttpURLConnection
 import java.net.URL
@@ -24,6 +25,14 @@ import java.util.Base64
 import java.util.UUID
 import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec
+
+private const val TAG = "IdKit-Kotlin"
+private const val POLLING_INTERVAL_3000_MS = 3000L
+private const val POLLING_ERROR_INTERVAL_5000_MS = 5000L
+// Session remains active on the Bridge for 15 minutes before expiring
+private const val SESSION_TIMEOUT_15_MIN = 15 * 60 * 1000L
+private const val CONNECTION_TIMEOUT_MS = 30_000
+private const val READ_TIMEOUT_MS = 30_000
 
 object UUIDSerializer : KSerializer<UUID> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("UUID", PrimitiveKind.STRING)
@@ -65,7 +74,6 @@ class Session(
     private val bridgeURL: BridgeURL,
     private val connectUrlType: ConnectUrlType,
 ) {
-
     /// The URL that the user should be directed to in order to connect their World App to the client.
     val connectUrl: URL
         get() {
@@ -142,55 +150,107 @@ class Session(
         }
     }
 
+    /**
+     * Returns a Flow that emits the current status of the verification session.
+     *
+     * Note: Avoid collecting this Flow multiple times on the same Session instance,
+     * as each collector will create a separate polling loop to the Bridge.
+     */
     fun status(): Flow<Status> = flow {
         var currentStatus: Status = Status.WaitingForConnection
         emit(currentStatus)
 
         val requestUrl = URL("${bridgeURL.rawURL}/response/$requestID")
+        val sessionStartTime = System.currentTimeMillis()
 
         while (true) {
-            try {
-                val connection = requestUrl.openConnection() as HttpURLConnection
-                connection.requestMethod = "GET"
-
-                val responseStream = connection.inputStream.bufferedReader().readText()
-
-                val bridgeResponse = Json.decodeFromString<BridgeQueryResponse>(responseStream)
-                if (bridgeResponse.status == "completed") {
-                    val payload = bridgeResponse.response ?: throw AppErrorThrowable(AppError.UnexpectedResponse)
-                    when (val decryptedResponse = payload.decrypt(key)) {
-                        is BridgeResponse.Error -> {
-                            emit(Status.Failed(decryptedResponse.error))
-                            break
-                        }
-                        is BridgeResponse.Success -> {
-                            emit(Status.Confirmed(decryptedResponse.proof))
-                            break
-                        }
-
-                        else -> {}
-                    }
-                }
-
-                val status = when (bridgeResponse.status) {
-                    "retrieved" -> Status.AwaitingConfirmation
-                    "initialized" -> Status.WaitingForConnection
-                    else -> throw AppErrorThrowable(AppError.UnexpectedResponse)
-                }
-
-                if (status != currentStatus) {
-                    currentStatus = status
-                    emit(currentStatus)
-                }
-
-                delay(3000)  // Wait for 3 seconds before polling again
-            } catch (ex: Exception) {
-                Log.w("IdKit-Kotlin", "Something went wrong: $ex")
-                emit(Status.Failed(AppError.GenericError(ex.message)))
+            if (isSessionTimedOut(sessionStartTime)) {
+                Log.w(TAG, "Session timed out")
+                emit(Status.Failed(AppError.ConnectionFailed))
                 break
+            }
+
+            when (val pollResult = pollBridgeOnce(requestUrl)) {
+                is PollResult.Success -> {
+                    val newStatus = pollResult.status
+                    if (newStatus != currentStatus) {
+                        currentStatus = newStatus
+                        emit(currentStatus)
+                    }
+
+                    if (newStatus is Status.Confirmed || newStatus is Status.Failed) {
+                        break
+                    }
+                    delay(POLLING_INTERVAL_3000_MS)
+                }
+
+                is PollResult.RecoverableError -> {
+                    // Network/HTTP error - retry silently (Android 15+ background restrictions)
+                    Log.d(TAG, "Network error (will retry): ${pollResult.message}")
+                    delay(POLLING_ERROR_INTERVAL_5000_MS)
+                }
+
+                is PollResult.FatalError -> {
+                    Log.w(TAG, "Fatal error: ${pollResult.message}")
+                    emit(Status.Failed(AppError.GenericError(pollResult.message)))
+                    break
+                }
             }
         }
     }.flowOn(Dispatchers.IO)
+
+    private fun isSessionTimedOut(sessionStartTime: Long): Boolean {
+        return System.currentTimeMillis() - sessionStartTime > SESSION_TIMEOUT_15_MIN
+    }
+
+    private fun pollBridgeOnce(requestUrl: URL): PollResult {
+        var connection: HttpURLConnection? = null
+        return try {
+            connection = (requestUrl.openConnection() as HttpURLConnection).apply {
+                requestMethod = "GET"
+                connectTimeout = CONNECTION_TIMEOUT_MS
+                readTimeout = READ_TIMEOUT_MS
+            }
+
+            val responseStream = connection.inputStream.bufferedReader().readText()
+            val bridgeResponse = Json.decodeFromString<BridgeQueryResponse>(responseStream)
+
+            parseBridgeResponse(bridgeResponse)
+
+        } catch (ex: IOException) {
+            PollResult.RecoverableError(ex.message)
+        } catch (ex: Exception) {
+            PollResult.FatalError(ex.message)
+        } finally {
+            connection?.disconnect()
+        }
+    }
+
+    private fun parseBridgeResponse(bridgeResponse: BridgeQueryResponse): PollResult {
+        if (bridgeResponse.status == "completed") {
+            val payload = bridgeResponse.response
+                ?: return PollResult.FatalError("Unexpected response: missing payload")
+
+            return when (val decryptedResponse = payload.decrypt(key)) {
+                is BridgeResponse.Error -> PollResult.Success(Status.Failed(decryptedResponse.error))
+                is BridgeResponse.Success -> PollResult.Success(Status.Confirmed(decryptedResponse.proof))
+            }
+        }
+
+        val status = when (bridgeResponse.status) {
+            "retrieved" -> Status.AwaitingConfirmation
+            "initialized" -> Status.WaitingForConnection
+            else -> return PollResult.FatalError("Unexpected status: ${bridgeResponse.status}")
+        }
+
+        return PollResult.Success(status)
+    }
+
+    private sealed class PollResult {
+        data class Success(val status: Status) : PollResult()
+        data class RecoverableError(val message: String?) : PollResult()
+        data class FatalError(val message: String?) : PollResult()
+    }
 }
 
 fun encodeSignal(signal: String): String {
