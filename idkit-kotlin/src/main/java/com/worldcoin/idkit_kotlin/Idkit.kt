@@ -83,7 +83,7 @@ class Session(
                 "${URLEncoder.encode(key, StandardCharsets.UTF_8.toString())}=${URLEncoder.encode(value, StandardCharsets.UTF_8.toString())}"
             }
 
-            return URL("https://worldcoin.org/verify?$queryString")
+            return URL("https://world.org/verify?$queryString")
         }
 
     companion object {
