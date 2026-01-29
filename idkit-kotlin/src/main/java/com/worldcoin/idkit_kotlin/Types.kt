@@ -112,7 +112,7 @@ sealed interface AppError {
     @SerialName("invalid_network")
     object InvalidNetwork : AppError {
         override val message =
-            "Invalid network. If you are the app owner, visit docs.worldcoin.org/test for details."
+            "Invalid network. If you are the app owner, visit https://docs.world.org/world-id/id/testing for details."
     }
 
     @Serializable
